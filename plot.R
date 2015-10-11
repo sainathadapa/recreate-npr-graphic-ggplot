@@ -6,6 +6,9 @@ library(scales)
 library(gridExtra)
 library(grid)
 library(Cairo)
+library(gtable)
+
+# Asis from the source --------------------------------------------------------
 
 # use the NPR story data file ---------------------------------------------
 # and be kind to NPR's bandwidth budget
@@ -39,52 +42,54 @@ gender_long <- mutate(gather(gender, area, value, -date),
 gender_colors <- c('#11605E', '#17807E', '#8BC0BF','#D8472B')
 names(gender_colors) <- colnames(gender)[2:5]
 
-# Here’s a “normal” ggplot ------------------------------------------------
-# styled similar to the NPR plot but it's not straightforward to
-# do the left-aligned title and subtitle with styling so center it is!
-
-chart_title <- expression(atop(bold("What Happened To Women In Computer Science?"),
-                               atop("% Of Women Majors, By Field")))
+# Modifications start from here -----------------------------------------------
 
 gg <- ggplot(gender_long)
-gg <- gg + geom_smooth(aes(x=date, y=value, group=area, color=area), se=F, method = "loess",span=0.15,size=0.85,
-                       lineend = "round",linejoin = "round")
+gg <- gg + geom_smooth(aes(x = date, y = value, group = area, color = area),
+                       se = F, method = "loess", span = 0.15,size = 0.85)
 gg <- gg + geom_hline(yintercept = 0, size = 0.2)
-gg <- gg + scale_color_manual(name="", values=gender_colors)
-gg <- gg + scale_y_continuous(label=percent, breaks = seq(from=0,to=0.5,by = 0.05))
-gg <- gg + scale_x_continuous(breaks = seq(from=1970,to=2010,by = 5))
+gg <- gg + scale_color_manual(name = "", values = gender_colors)
+gg <- gg + scale_y_continuous(label = percent, breaks = seq(from = 0,to = 0.5,by = 0.05))
+gg <- gg + scale_x_continuous(breaks = seq(from = 1970, to = 2010, by = 5))
 gg <- gg + coord_cartesian(xlim = c(1966, 2013), ylim = c(0, 0.55))
-gg <- gg + labs(x=NULL, y=NULL, title=NULL)
-gg <- gg + theme_bw(base_family="Helvetica")
-gg <- gg + theme(axis.ticks.y=element_blank())
-gg <- gg + theme(panel.border=element_blank())
-gg <- gg + theme(legend.key=element_blank())
-gg <- gg + theme(legend.justification = 'left', legend.position=c(-0.1,1.01), legend.direction = 'horizontal') # mine
-gg <- gg + theme(legend.key.height = unit(0.1, 'cm'), legend.key.width = unit(0.1, 'cm')) +
-  guides(colour = guide_legend(override.aes = list(size=5)))
-gg <- gg + theme(panel.grid = element_line(linetype = 'dotted', size = unit(0.1, 'points')))
-
-ggsave(plot = gg, "output.png", h = 9/3, w = 16/3, type = "cairo-png")
+gg <- gg + labs(x = NULL, y = NULL, title = NULL)
+gg <- gg + theme_bw(base_family = "Helvetica", base_size = 10)
+gg <- gg + theme(axis.ticks.y = element_blank())
+gg <- gg + theme(panel.border = element_blank())
+gg <- gg + theme(legend.key = element_blank())
+gg <- gg + theme(legend.justification = 'left', legend.position = c(-0.075,1.01), legend.direction = 'horizontal')
+gg <- gg + theme(legend.key.height = unit(0.1, 'cm'), legend.key.width = unit(0.1, 'cm'))
+gg <- gg + guides(colour = guide_legend(override.aes = list(size = 5)))
+gg <- gg + theme(panel.grid = element_line(linetype = 'dotted', size = 1, color = 'black'))
 
 
-# # now to label end of the lines -------------------------------------------
-# 
-# last_vals <- sapply(colnames(gender)[2:5], function(x) last(na.exclude(gender[,x])))
-# last_date <- tail(gender$date)+1 # doing this ^ wld have made it a double
-# 
-# gg <- gg + theme(legend.position="none")
-# gg <- gg + theme(plot.margin = unit(c(1, 7, 2, 1), "lines"))
-# 
-# for (i in 1:length(last_vals)) {
-#   gg <- gg + annotation_custom(grob=textGrob(names(last_vals)[i], hjust=0,
-#                                              gp=gpar(fontsize=8,
-#                                                      col=gender_colors[names(last_vals)[i]])),
-#                                xmin=2014, xmax=2014,
-#                                ymin=last_vals[i], ymax=last_vals[i])
-# }
-# 
-# gb <- ggplot_build(gg)
-# gt <- ggplot_gtable(gb)
-# 
-# gt$layout$clip[gt$layout$name=="panel"] <- "off"
-# grid.draw(gt)
+vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+
+gg1 <- textGrob(expression(bold("What Happened To Women In Computer Science?")), vp = vplayout(1,1),
+                x = unit(0.02, "npc"), y = unit(0.5, "npc"),
+                hjust = 0, vjust = 0,
+                gp = gpar(fontsize = 12, face = "bold", col = "black"))
+gg2 <- textGrob("% Of Women Majors, By Field",vp = vplayout(2,1),
+                hjust = 0, vjust = -0.5,
+                x = unit(0.02, "npc"), y = unit(1, "npc"),
+                just = "left", gp = gpar(fontsize = 10,col = "black"))
+gg3 <- gg
+
+gg4 <- textGrob("Source: National Science Foundation, American Bar Association, American Association of Medical Colleges",
+                x = unit(0.02, "npc"), y = unit(0, "npc"),
+                hjust = 0, vjust = -0.5,
+                vp = vplayout(15,1),
+                gp = gpar(fontsize = 8, col = "black"))
+gg5 <- textGrob("Credit: Quoctrung Bui/NPR",
+                x = unit(0.02, "npc"), y = unit(0, "npc"),
+                hjust = 0, vjust = -1,
+                vp = vplayout(16,1),
+                gp = gpar(fontsize = 8, col = "black"))
+
+layout_matrix <- matrix(c(1,1, 2,2, rep(3, times = 20), 4, 5),ncol = 1)
+graphics.off()
+ggf <- arrangeGrob(gg1, gg2, gg3, gg4, gg5, layout_matrix = layout_matrix)
+grid.draw(ggf)
+
+ggsave(plot = ggf, "output.png", type = "cairo-png", h = 514/96, w = 702/96, dpi = 96)
+
