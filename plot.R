@@ -5,6 +5,7 @@ library(stringr)
 library(scales)
 library(gridExtra)
 library(grid)
+library(Cairo)
 
 # use the NPR story data file ---------------------------------------------
 # and be kind to NPR's bandwidth budget
@@ -61,10 +62,9 @@ gg <- gg + theme(legend.key=element_blank())
 gg <- gg + theme(legend.justification = 'left', legend.position=c(-0.1,1.01), legend.direction = 'horizontal') # mine
 gg <- gg + theme(legend.key.height = unit(0.1, 'cm'), legend.key.width = unit(0.1, 'cm')) +
   guides(colour = guide_legend(override.aes = list(size=5)))
-gg <- gg + theme(panel.grid = element_line(linetype = 'dashed', size = unit(0.1, 'points')))
-gg
+gg <- gg + theme(panel.grid = element_line(linetype = 'dotted', size = unit(0.1, 'points')))
 
-ggsave(plot = gg, "Cairo ggsave.png", h = 9/3, w = 16/3, type = "cairo-png")
+ggsave(plot = gg, "output.png", h = 9/3, w = 16/3, type = "cairo-png")
 
 
 # # now to label end of the lines -------------------------------------------
